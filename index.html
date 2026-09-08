@@ -11,37 +11,51 @@
     
     <!-- Manifiesto para que sea instalable -->
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#ffffff">    <style>
-/* ESTILO DEL BOTÓN DE INSTALAR */
-#btn-instalar {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(118, 75, 162, 0.3);
-    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
-    -webkit-tap-highlight-color: transparent;
-}
+    <meta name="theme-color" content="#ffffff">    
+    <style>
+        /* ANIMACIÓN PARA QUE EL BOTÓN LLAME LA ATENCIÓN */
+        @keyframes latido {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
 
-#btn-instalar:active {
-    transform: translateY(-50%) scale(0.92);
-    box-shadow: 0 2px 5px rgba(118, 75, 162, 0.2);
-}
+        /* ESTILO DEL BOTÓN DE INSTALAR (GRANDE Y FLOTANTE) */
+        #btn-instalar {
+            position: fixed;
+            top: 75px; /* Justo debajo de la barra superior */
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4);
+            z-index: 1001;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            animation: latido 2s infinite;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #btn-instalar:active {
+            animation: none;
+            transform: translateX(-50%) scale(0.95);
+            box-shadow: 0 4px 10px rgba(118, 75, 162, 0.3);
+        }
+
         body {
             background-color: #ffffff;
             margin: 0;
             padding: 15px;
-            padding-top: 80px; /* Espacio para que la barra superior no tape botones */
-            padding-bottom: 28vh; /* Espacio para que el reproductor no tape botones */
+            padding-top: 150px; /* Aumentado para que el botón gigante no tape los primeros animales */
+            padding-bottom: 28vh;
             display: flex;
             justify-content: center;
             font-family: sans-serif;
@@ -96,13 +110,13 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         }
         
-        /* REPRODUCTOR FLOTANTE (Adaptado a tema claro) */
+        /* REPRODUCTOR FLOTANTE */
         .reproductor {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 25vh; /* 1/4 del viewport height */
+            height: 25vh;
             background-color: #f8f9fa;
             border-top: 1px solid #eaeaea;
             display: flex;
@@ -166,14 +180,14 @@
     </style>
 </head>
 <body>
-    <!-- Barra superior flotante -->
     <div class="barra-superior">
         <h1>Proyector Lúdico</h1>
-	<button id="btn-instalar" style="display: none;">Instalar App</button>
     </div>
 
+    <!-- Botón movido fuera de la barra superior para centrarlo y hacerlo gigante -->
+    <button id="btn-instalar" style="display: none;">¡INSTALAR APP!</button>
+
     <div class="grilla">
-        
         <button class="boton-sonido" onclick="reproducir('3_BENTEVEO')">
             <img src="3_BENTEVEO.png" alt="3_BENTEVEO">
         </button>
@@ -206,7 +220,6 @@
         </button>
     </div>
 
-    <!-- Barra inferior -->
     <div id="reproductor" class="reproductor">
         <img id="rep-img" class="rep-img" src="" alt="Portada">
         <div class="rep-info">
@@ -217,9 +230,11 @@
     </div>
 
     <script>
-	if ('serviceWorker' in navigator) {
-    		navigator.serviceWorker.register('./sw.js');
-	}
+        // Registrar Service Worker para offline
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+
         let audioActual = null;
         const reproductor = document.getElementById('reproductor');
         const repImg = document.getElementById('rep-img');
@@ -249,31 +264,29 @@
         let eventoInstalacion = null;
         const btnInstalar = document.getElementById('btn-instalar');
 
-        // Detectar si ya está instalada (Standalone mode)
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         
         if (!isStandalone) {
             window.addEventListener('beforeinstallprompt', (e) => {
-                // Prevenir que Chrome muestre el prompt automático
                 e.preventDefault();
                 eventoInstalacion = e;
-                // Mostrar nuestro botón personalizado
-                btnInstalar.style.display = 'block';
+                if(btnInstalar) {
+                    btnInstalar.style.display = 'block';
+                }
             });
 
-            btnInstalar.addEventListener('click', async () => {
-                if (!eventoInstalacion) return;
-                
-                // Mostrar el prompt nativo
-                eventoInstalacion.prompt();
-                
-                // Esperar a ver qué eligió el usuario
-                const { outcome } = await eventoInstalacion.userChoice;
-                if (outcome === 'accepted') {
-                    btnInstalar.style.display = 'none';
-                }
-                eventoInstalacion = null;
-            });
+            if(btnInstalar) {
+                btnInstalar.addEventListener('click', async () => {
+                    if (!eventoInstalacion) return;
+                    
+                    eventoInstalacion.prompt();
+                    const { outcome } = await eventoInstalacion.userChoice;
+                    if (outcome === 'accepted') {
+                        btnInstalar.style.display = 'none';
+                    }
+                    eventoInstalacion = null;
+                });
+            }
         }
     </script>
 </body>
