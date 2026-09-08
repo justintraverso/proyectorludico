@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Proyector Lúdico</title>
-    <style>
+    
+    <!-- Favicon e ícono de la app -->
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    
+    <!-- Manifiesto para que sea instalable -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">    <style>
         body {
             background-color: #ffffff;
             margin: 0;
@@ -185,6 +192,9 @@
     </div>
 
     <script>
+	if ('serviceWorker' in navigator) {
+    		navigator.serviceWorker.register('sw.js');
+	}
         let audioActual = null;
         const reproductor = document.getElementById('reproductor');
         const repImg = document.getElementById('rep-img');
@@ -195,13 +205,10 @@
                 audioActual.pause();
                 audioActual.currentTime = 0;
             }
-            
             audioActual = new Audio(nombre + '.mp3');
             audioActual.play();
-
             repImg.src = nombre + '.png';
             repTitulo.textContent = nombre;
-            
             reproductor.classList.add('activo');
         }
 
@@ -211,6 +218,37 @@
                 audioActual.currentTime = 0;
             }
             reproductor.classList.remove('activo');
+        }
+
+        // --- LÓGICA DE INSTALACIÓN (PWA) ---
+        let eventoInstalacion = null;
+        const btnInstalar = document.getElementById('btn-instalar');
+
+        // Detectar si ya está instalada (Standalone mode)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        
+        if (!isStandalone) {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // Prevenir que Chrome muestre el prompt automático
+                e.preventDefault();
+                eventoInstalacion = e;
+                // Mostrar nuestro botón personalizado
+                btnInstalar.style.display = 'block';
+            });
+
+            btnInstalar.addEventListener('click', async () => {
+                if (!eventoInstalacion) return;
+                
+                // Mostrar el prompt nativo
+                eventoInstalacion.prompt();
+                
+                // Esperar a ver qué eligió el usuario
+                const { outcome } = await eventoInstalacion.userChoice;
+                if (outcome === 'accepted') {
+                    btnInstalar.style.display = 'none';
+                }
+                eventoInstalacion = null;
+            });
         }
     </script>
 </body>
