@@ -1,7 +1,6 @@
-const CACHE_NAME = 'proyector-ludico-v1';
+// CAMBIAMOS A v2 PARA FORZAR LA ACTUALIZACIÓN
+const CACHE_NAME = 'proyector-ludico-v2'; 
 
-// Acá van TODOS los archivos que necesita tu app para funcionar sin internet.
-// Si agregás un animal nuevo en el futuro, tenés que sumarlo a esta lista.
 const ARCHIVOS_CACHE = [
     './',
     './index.html',
@@ -19,23 +18,27 @@ const ARCHIVOS_CACHE = [
     './10_RANITA.png', './10_RANITA.mp3'
 ];
 
-// Instalar: Se descargan todos los archivos al caché
 self.addEventListener('install', (evento) => {
     evento.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('Archivos en caché con éxito');
-                return cache.addAll(ARCHIVOS_CACHE);
-            })
+        caches.open(CACHE_NAME).then(async (cache) => {
+            // Guardamos UNO POR UNO. Si uno falla (por error de tipeo), no rompe el resto.
+            for (let archivo of ARCHIVOS_CACHE) {
+                try {
+                    await cache.add(archivo);
+                } catch (error) {
+                    console.error('❌ Falló al guardar en caché (Revisar mayúsculas en GitHub):', archivo);
+                }
+            }
+        })
     );
 });
 
-// Activar: Limpia cachés viejos si alguna vez cambias el CACHE_NAME (ej: a v2)
 self.addEventListener('activate', (evento) => {
     evento.waitUntil(
         caches.keys().then((nombresDeCache) => {
             return Promise.all(
                 nombresDeCache.map((nombre) => {
+                    // Borramos la v1 vieja
                     if (nombre !== CACHE_NAME) {
                         return caches.delete(nombre);
                     }
@@ -45,12 +48,11 @@ self.addEventListener('activate', (evento) => {
     );
 });
 
-// Interceptar peticiones: Si el usuario no tiene internet, le da el archivo del caché
 self.addEventListener('fetch', (evento) => {
     evento.respondWith(
-        caches.match(evento.request)
+        // ignoreSearch evita que si el navegador pide "audio.mp3?v=1", no lo encuentre
+        caches.match(evento.request, { ignoreSearch: true })
             .then((respuesta) => {
-                // Si el archivo está en el caché, lo devuelve. Si no, lo va a buscar a internet.
                 return respuesta || fetch(evento.request);
             })
     );
