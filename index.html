@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="favicon.png">
     
     <!-- Manifiesto para que sea instalable -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#ffffff">    <style>
         body {
             background-color: #ffffff;
@@ -193,7 +193,7 @@
 
     <script>
 	if ('serviceWorker' in navigator) {
-    		navigator.serviceWorker.register('sw.js');
+    		navigator.serviceWorker.register('./sw.js');
 	}
         let audioActual = null;
         const reproductor = document.getElementById('reproductor');
