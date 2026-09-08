@@ -239,14 +239,35 @@
         const reproductor = document.getElementById('reproductor');
         const repImg = document.getElementById('rep-img');
         const repTitulo = document.getElementById('rep-titulo');
+        
+        // Memoria temporal para guardar los audios ya convertidos y que carguen al instante
+        const audiosEnMemoria = {};
 
-        function reproducir(nombre) {
+        async function reproducir(nombre) {
             if (audioActual) {
                 audioActual.pause();
                 audioActual.currentTime = 0;
             }
-            audioActual = new Audio(nombre + '.mp3');
+            
+            const archivoMp3 = nombre + '.mp3';
+
+            // Si el audio todavía no está en la memoria RAM, lo pedimos (al caché) y lo convertimos a un objeto local (Blob)
+            if (!audiosEnMemoria[archivoMp3]) {
+                try {
+                    const respuesta = await fetch(archivoMp3);
+                    const blob = await respuesta.blob();
+                    // Creamos una URL interna del navegador (blob:http://...)
+                    audiosEnMemoria[archivoMp3] = URL.createObjectURL(blob);
+                } catch (error) {
+                    console.error("Error al procesar el audio para uso offline:", error);
+                    return; // Si algo falla, cortamos acá
+                }
+            }
+
+            // Reproducimos usando la URL interna que nunca falla sin internet
+            audioActual = new Audio(audiosEnMemoria[archivoMp3]);
             audioActual.play();
+            
             repImg.src = nombre + '.png';
             repTitulo.textContent = nombre;
             reproductor.classList.add('activo');
