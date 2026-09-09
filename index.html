@@ -177,6 +177,43 @@
         .btn-parar:active {
             background-color: #b71c1c;
         }
+/* MODAL PARA IOS */
+        .ios-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 2000;
+            display: flex;
+            align-items: flex-end; /* Lo tira hacia abajo, cerca de los botones de Safari */
+            justify-content: center;
+        }
+        .ios-contenido {
+            background: white;
+            width: 100%;
+            padding: 25px 20px 40px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            font-family: sans-serif;
+            animation: subir 0.3s ease-out;
+        }
+        .ios-contenido h3 { margin-top: 0; color: #222; }
+        .ios-contenido p { color: #444; font-size: 1rem; margin: 15px 0; }
+        .ios-contenido button {
+            background-color: #007AFF; /* Azul típico de iOS */
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        @keyframes subir {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -184,8 +221,18 @@
         <h1>Proyector Lúdico</h1>
     </div>
 
-    <!-- Botón movido fuera de la barra superior para centrarlo y hacerlo gigante -->
+<!-- Botón gigante (tu código actual) -->
     <button id="btn-instalar" style="display: none;">¡INSTALAR APP!</button>
+
+    <!-- Cartel de instrucciones exclusivo para iOS (Oculto por defecto) -->
+    <div id="ios-instrucciones" class="ios-modal" style="display: none;">
+        <div class="ios-contenido">
+            <h3>Instalar en iPhone</h3>
+            <p>1. Tocá el ícono de <b>Compartir</b> <svg width="18" height="18" viewBox="0 0 50 50" style="vertical-align: middle;"><path d="M25,2L12,16h8v16h10V16h8L25,2z M10,38v8h30v-8h-4v4H14v-4H10z" fill="#007AFF"/></svg> en la barra inferior de Safari.</p>
+            <p>2. Elegí <b>"Agregar a inicio"</b>.</p>
+            <button onclick="document.getElementById('ios-instrucciones').style.display='none'">Entendido</button>
+        </div>
+    </div>
 
     <div class="grilla">
         <button class="boton-sonido" onclick="reproducir('3_BENTEVEO')">
@@ -281,32 +328,48 @@
             reproductor.classList.remove('activo');
         }
 
-        // --- LÓGICA DE INSTALACIÓN (PWA) ---
+        // --- LÓGICA DE INSTALACIÓN (PWA) ACTUALIZADA ---
         let eventoInstalacion = null;
         const btnInstalar = document.getElementById('btn-instalar');
+        const modalIOS = document.getElementById('ios-instrucciones');
 
+        // Detectar si está instalada. 
+        // matchMedia es para Chrome/Android. navigator.standalone es exclusivo de iOS.
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         
-        if (!isStandalone) {
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                eventoInstalacion = e;
-                if(btnInstalar) {
-                    btnInstalar.style.display = 'block';
-                }
-            });
+        // Detectar si el dispositivo es un iPhone o iPad
+        const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-            if(btnInstalar) {
-                btnInstalar.addEventListener('click', async () => {
-                    if (!eventoInstalacion) return;
-                    
-                    eventoInstalacion.prompt();
-                    const { outcome } = await eventoInstalacion.userChoice;
-                    if (outcome === 'accepted') {
-                        btnInstalar.style.display = 'none';
+        if (!isStandalone) {
+            if (esIOS) {
+                // --- MODO IOS: Forzamos el botón ---
+                if (btnInstalar) {
+                    btnInstalar.style.display = 'block'; // Lo mostramos de una
+                    btnInstalar.addEventListener('click', () => {
+                        modalIOS.style.display = 'flex'; // Mostramos las instrucciones
+                    });
+                }
+            } else {
+                // --- MODO ANDROID / WINDOWS: Esperamos el evento oficial ---
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    eventoInstalacion = e;
+                    if(btnInstalar) {
+                        btnInstalar.style.display = 'block';
                     }
-                    eventoInstalacion = null;
                 });
+
+                if(btnInstalar) {
+                    btnInstalar.addEventListener('click', async () => {
+                        if (!eventoInstalacion) return;
+                        eventoInstalacion.prompt();
+                        const { outcome } = await eventoInstalacion.userChoice;
+                        if (outcome === 'accepted') {
+                            btnInstalar.style.display = 'none';
+                        }
+                        eventoInstalacion = null;
+                    });
+                }
             }
         }
     </script>
