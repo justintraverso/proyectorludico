@@ -324,6 +324,7 @@
 
         function ejecutarAudio(srcUrl) {
             audioActual = new Audio(srcUrl);
+            audioActual.loop = true;
             audioActual.play();
         }
 
