@@ -5,215 +5,136 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Proyector Lúdico</title>
     
-    <!-- Favicon e ícono de la app -->
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="favicon.png">
-    
-    <!-- Manifiesto para que sea instalable -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#ffffff">    
     <style>
-        /* ANIMACIÓN PARA QUE EL BOTÓN LLAME LA ATENCIÓN */
+        @font-face {
+            font-family: 'Unkempt';
+            src: url('./style/Unkempt-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        /* Deshabilitar selección de texto y menú flotante */
+        * {
+            font-family: 'Unkempt', sans-serif !important;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        img {
+            -webkit-user-drag: none;
+            user-drag: none;
+        }
+
         @keyframes latido {
             0% { transform: translateX(-50%) scale(1); }
             50% { transform: translateX(-50%) scale(1.05); }
             100% { transform: translateX(-50%) scale(1); }
         }
-
-        /* ESTILO DEL BOTÓN DE INSTALAR (GRANDE Y FLOTANTE) */
         #btn-instalar {
-            position: fixed;
-            top: 75px; /* Justo debajo de la barra superior */
-            left: 50%;
-            transform: translateX(-50%);
+            position: fixed; top: 75px; left: 50%; transform: translateX(-50%);
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 30px;
-            font-weight: 900;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4);
-            z-index: 1001;
-            width: 85%;
-            max-width: 320px;
-            text-align: center;
-            animation: latido 2s infinite;
-            -webkit-tap-highlight-color: transparent;
+            color: white; border: none; padding: 14px 28px; border-radius: 30px;
+            font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; cursor: pointer;
+            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4); z-index: 1001;
+            width: 85%; max-width: 320px; text-align: center;
+            animation: latido 2s infinite; -webkit-tap-highlight-color: transparent;
+            display: none; /* Se activa por JS si no está instalada */
         }
-
         #btn-instalar:active {
-            animation: none;
-            transform: translateX(-50%) scale(0.95);
+            animation: none; transform: translateX(-50%) scale(0.95);
             box-shadow: 0 4px 10px rgba(118, 75, 162, 0.3);
         }
-
         body {
-            background-color: #ffffff;
-            margin: 0;
-            padding: 15px;
-            padding-top: 150px; /* Aumentado para que el botón gigante no tape los primeros animales */
-            padding-bottom: 28vh;
-            display: flex;
+            background-color: #ffffff; margin: 0; padding: 15px;
+            padding-top: 80px; padding-bottom: 28vh; display: flex;
             justify-content: center;
-            font-family: sans-serif;
         }
-        
-        /* BARRA SUPERIOR */
+        body.con-boton-instalar {
+            padding-top: 150px; 
+        }
+
         .barra-superior {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background-color: #ffffff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center; z-index: 1000;
         }
         .barra-superior h1 {
-            margin: 0;
-            font-size: 1.4rem;
-            color: #222;
-            font-weight: bold;
-            letter-spacing: 0.5px;
+            margin: 0; font-size: 1.4rem; color: #222; font-weight: bold; letter-spacing: 0.5px;
         }
-
         .grilla {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            width: 100%;
-            max-width: 500px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+            width: 100%; max-width: 500px;
         }
         .boton-sonido {
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-            border-radius: 12px;
-            transition: transform 0.1s ease-out;
-            -webkit-tap-highlight-color: transparent;
+            background: none; border: none; padding: 0; cursor: pointer;
+            border-radius: 12px; transition: transform 0.1s ease-out;
+            -webkit-tap-highlight-color: transparent; position: relative;
         }
-        .boton-sonido:active {
-            transform: scale(0.92);
-        }
+        .boton-sonido:active { transform: scale(0.92); }
         .boton-sonido img {
-            width: 100%;
-            aspect-ratio: 1/1;
-            object-fit: cover;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            width: 100%; aspect-ratio: 1/1; object-fit: cover;
+            border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.15);
         }
         
-        /* REPRODUCTOR FLOTANTE */
+        .boton-agregar {
+            background: #f0f0f0; border: 2px dashed #ccc; padding: 0;
+            cursor: pointer; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center;
+            aspect-ratio: 1/1; transition: transform 0.1s ease-out;
+        }
+        .boton-agregar:active { transform: scale(0.92); }
+        .boton-agregar span { font-size: 3rem; color: #888; font-weight: 300; }
+
         .reproductor {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 25vh;
-            background-color: #f8f9fa;
-            border-top: 1px solid #eaeaea;
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            box-sizing: border-box;
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 25vh;
+            background-color: #f8f9fa; border-top: 1px solid #eaeaea;
+            display: flex; align-items: center; padding: 15px; box-sizing: border-box;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1); transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000;
         }
-        .reproductor.activo {
-            transform: translateY(0); 
-        }
+        .reproductor.activo { transform: translateY(0); }
         .rep-img {
-            height: 100%;
-            aspect-ratio: 1/1;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-right: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            height: 100%; aspect-ratio: 1/1; object-fit: cover;
+            border-radius: 8px; margin-right: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .rep-info {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100%;
-            flex-grow: 1;
+            display: flex; flex-direction: column; justify-content: space-between;
+            height: 100%; flex-grow: 1; min-width: 0;
         }
-        .rep-texto-arriba {
-            color: #666;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 5px;
-        }
-        .rep-titulo {
-            color: #222;
-            font-size: 1.3rem;
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .rep-texto-arriba { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+        .rep-titulo { color: #222; font-size: 1.3rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .btn-parar {
-            background-color: #e53935;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-bottom: 5px;
-            box-shadow: 0 2px 4px rgba(229, 57, 53, 0.4);
+            background-color: #e53935; color: white; border: none; padding: 10px;
+            border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(229, 57, 53, 0.4); margin-bottom: 5px;
         }
-        .btn-parar:active {
-            background-color: #b71c1c;
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6); z-index: 2000; display: none;
+            align-items: center; justify-content: center;
         }
-/* MODAL PARA IOS */
-        .ios-modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6);
-            z-index: 2000;
-            display: flex;
-            align-items: flex-end; /* Lo tira hacia abajo, cerca de los botones de Safari */
-            justify-content: center;
+        .modal-ios-fondo { align-items: flex-end; }
+        
+        .modal-contenido {
+            background: white; width: 90%; max-width: 400px; padding: 25px;
+            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
-        .ios-contenido {
-            background: white;
-            width: 100%;
-            padding: 25px 20px 40px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
-            text-align: center;
-            font-family: sans-serif;
-            animation: subir 0.3s ease-out;
-        }
-        .ios-contenido h3 { margin-top: 0; color: #222; }
-        .ios-contenido p { color: #444; font-size: 1rem; margin: 15px 0; }
-        .ios-contenido button {
-            background-color: #007AFF; /* Azul típico de iOS */
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 20px;
-            font-size: 1rem;
-            font-weight: bold;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-        @keyframes subir {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
+        .modal-contenido h3 { margin-top: 0; margin-bottom: 20px; color: #222; }
+        .input-grupo { margin-bottom: 15px; text-align: left; }
+        .input-grupo label { display: block; font-weight: bold; margin-bottom: 5px; color: #444; font-size: 0.9rem;}
+        .input-grupo input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        .input-grupo input[type="file"] { width: 100%; font-size: 0.9rem; }
+        
+        .btn-modal { padding: 10px 20px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem;}
+        .btn-guardar { background-color: #4CAF50; color: white; }
+        .btn-cancelar { background-color: #eee; color: #444; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -221,51 +142,9 @@
         <h1>Proyector Lúdico</h1>
     </div>
 
-<!-- Botón gigante (tu código actual) -->
-    <button id="btn-instalar" style="display: none;">¡INSTALAR APP!</button>
+    <button id="btn-instalar">INSTALAR APP</button>
 
-    <!-- Cartel de instrucciones exclusivo para iOS (Oculto por defecto) -->
-    <div id="ios-instrucciones" class="ios-modal" style="display: none;">
-        <div class="ios-contenido">
-            <h3>Instalar en iPhone</h3>
-            <p>1. Tocá el ícono de <b>Compartir</b> <svg width="18" height="18" viewBox="0 0 50 50" style="vertical-align: middle;"><path d="M25,2L12,16h8v16h10V16h8L25,2z M10,38v8h30v-8h-4v4H14v-4H10z" fill="#007AFF"/></svg> en la barra inferior de Safari.</p>
-            <p>2. Elegí <b>"Agregar a inicio"</b>.</p>
-            <button onclick="document.getElementById('ios-instrucciones').style.display='none'">Entendido</button>
-        </div>
-    </div>
-
-    <div class="grilla">
-        <button class="boton-sonido" onclick="reproducir('3_BENTEVEO')">
-            <img src="3_BENTEVEO.png" alt="3_BENTEVEO">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('5_CARPINCHO')">
-            <img src="5_CARPINCHO.png" alt="5_CARPINCHO">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('8_MONO')">
-            <img src="8_MONO.png" alt="8_MONO">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('10_RANITA')">
-            <img src="10_RANITA.png" alt="10_RANITA">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('2_ARMADO')">
-            <img src="2_ARMADO.png" alt="2_ARMADO">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('6_CHICHARRA')">
-            <img src="6_CHICHARRA.png" alt="6_CHICHARRA">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('4_CARDENAL')">
-            <img src="4_CARDENAL.png" alt="4_CARDENAL">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('7_ESCUERZO')">
-            <img src="7_ESCUERZO.png" alt="7_ESCUERZO">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('1_AGUARA')">
-            <img src="1_AGUARA.png" alt="1_AGUARA">
-        </button>
-        <button class="boton-sonido" onclick="reproducir('9_PECARI')">
-            <img src="9_PECARI.png" alt="9_PECARI">
-        </button>
-    </div>
+    <div id="contenedor-grilla" class="grilla"></div>
 
     <div id="reproductor" class="reproductor">
         <img id="rep-img" class="rep-img" src="" alt="Portada">
@@ -276,100 +155,235 @@
         </div>
     </div>
 
+    <!-- MODAL CARGAR ESPECIE -->
+    <div id="modal-agregar" class="modal-overlay" onclick="cerrarModal(event)">
+        <div class="modal-contenido" onclick="event.stopPropagation()">
+            <h3>Cargar Nueva Especie</h3>
+            
+            <div class="input-grupo">
+                <label>Nombre del animal</label>
+                <input type="text" id="nuevo-nombre" placeholder="Ej: Yaguareté" autocomplete="off">
+            </div>
+
+            <div class="input-grupo">
+                <label>Foto (JPG o PNG)</label>
+                <input type="file" id="nueva-foto" onchange="previsualizar(this)">
+                <img id="preview-foto" style="width: 80px; height: 80px; object-fit: cover; display: none; margin-top: 10px; border-radius: 8px;">
+            </div>
+
+            <div class="input-grupo">
+                <label>Sonido (MP3)</label>
+                <input type="file" id="nuevo-sonido">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 25px;">
+                <button class="btn-modal btn-cancelar" onclick="document.getElementById('modal-agregar').style.display='none'">Cancelar</button>
+                <button class="btn-modal btn-guardar" onclick="guardarEspecieLocal()">Cargar Especie</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IOS -->
+    <div id="ios-instrucciones" class="modal-overlay modal-ios-fondo">
+        <div class="modal-contenido" style="border-radius: 20px 20px 0 0; text-align: center;">
+            <h3>Instalar en iPhone</h3>
+            <p style="color: #444; margin: 15px 0;">1. Tocá el ícono de <b>Compartir</b> abajo.</p>
+            <p style="color: #444; margin: 15px 0;">2. Elegí <b>"Agregar a inicio"</b>.</p>
+            <button class="btn-modal" style="background:#007AFF; color:white; width:100%; margin-top:10px;" onclick="document.getElementById('ios-instrucciones').style.display='none'">Entendido</button>
+        </div>
+    </div>
+
     <script>
-        // Registrar Service Worker para offline
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js');
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); }
+
+        const grilla = document.getElementById('contenedor-grilla');
+        const especiesBase = [
+            '1_AGUARA', '2_ARMADO', '3_BENTEVEO', '4_CARDENAL', '5_CARPINCHO',
+            '6_CHICHARRA', '7_ESCUERZO', '8_MONO', '9_PECARI', '10_RANITA'
+        ];
+
+        let baseDatosDB = null;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        function iniciarDB() {
+            return new Promise((resolve) => {
+                const request = indexedDB.open('ProyectorLudicoDB', 1);
+                request.onupgradeneeded = (e) => {
+                    e.target.result.createObjectStore('especiesLocales', { keyPath: 'id' });
+                };
+                request.onsuccess = (e) => { baseDatosDB = e.target.result; resolve(); };
+            });
+        }
+
+        async function cargarGrilla() {
+            grilla.innerHTML = '';
+            especiesBase.forEach(id => {
+                const imgRuta = `./especies/${id}/${id}.png`;
+                const audioRuta = `./especies/${id}/${id}.mp3`;
+                grilla.innerHTML += `
+                    <button class="boton-sonido" onclick="reproducirBase('${id}', '${audioRuta}', this)">
+                        <img src="${imgRuta}" onerror="manejarErrorImagen(this, '${id}')">
+                    </button>`;
+            });
+
+            if (baseDatosDB) {
+                const tx = baseDatosDB.transaction('especiesLocales', 'readonly');
+                const store = tx.objectStore('especiesLocales');
+                const request = store.getAll();
+                
+                request.onsuccess = () => {
+                    request.result.forEach(especie => {
+                        const imgUrl = URL.createObjectURL(especie.fotoBlob);
+                        const audioUrl = URL.createObjectURL(especie.audioBlob);
+                        
+                        grilla.innerHTML += `
+                            <button class="boton-sonido" onclick="reproducirLocal('${especie.nombre}', '${audioUrl}', '${imgUrl}')">
+                                <img src="${imgUrl}">
+                            </button>`;
+                    });
+
+                    grilla.innerHTML += `
+                        <button class="boton-agregar" onclick="document.getElementById('modal-agregar').style.display='flex'">
+                            <span>+</span>
+                        </button>`;
+                };
+            }
+        }
+
+        function manejarErrorImagen(img, id) {
+            const baseFolder = `./especies/${id}/${id}`;
+            if (img.src.endsWith('.png')) { img.src = baseFolder + '.jpg'; } 
+            else if (img.src.endsWith('.jpg')) { img.src = baseFolder + '.jpeg'; } 
+            else { img.parentElement.style.display = 'none'; }
         }
 
         let audioActual = null;
         const reproductor = document.getElementById('reproductor');
         const repImg = document.getElementById('rep-img');
         const repTitulo = document.getElementById('rep-titulo');
-        
-        // Memoria temporal para guardar los audios ya convertidos y que carguen al instante
         const audiosEnMemoria = {};
 
-        async function reproducir(nombre) {
-            if (audioActual) {
-                audioActual.pause();
-                audioActual.currentTime = 0;
-            }
-            
-            const archivoMp3 = nombre + '.mp3';
-
-            // Si el audio todavía no está en la memoria RAM, lo pedimos (al caché) y lo convertimos a un objeto local (Blob)
-            if (!audiosEnMemoria[archivoMp3]) {
+        async function reproducirBase(nombre, rutaAudio, btnElement) {
+            prepararReproductor(nombre, btnElement.querySelector('img').src);
+            if (!audiosEnMemoria[rutaAudio]) {
                 try {
-                    const respuesta = await fetch(archivoMp3);
+                    const respuesta = await fetch(rutaAudio);
+                    if (!respuesta.ok) throw new Error("Audio no encontrado");
                     const blob = await respuesta.blob();
-                    // Creamos una URL interna del navegador (blob:http://...)
-                    audiosEnMemoria[archivoMp3] = URL.createObjectURL(blob);
+                    audiosEnMemoria[rutaAudio] = URL.createObjectURL(blob);
                 } catch (error) {
-                    console.error("Error al procesar el audio para uso offline:", error);
-                    return; // Si algo falla, cortamos acá
+                    btnElement.style.display = 'none';
+                    parar(); return;
                 }
             }
+            ejecutarAudio(audiosEnMemoria[rutaAudio]);
+        }
 
-            // Reproducimos usando la URL interna que nunca falla sin internet
-            audioActual = new Audio(audiosEnMemoria[archivoMp3]);
-            audioActual.play();
-            
-            repImg.src = nombre + '.png';
+        function reproducirLocal(nombre, urlAudioBlob, urlImgBlob) {
+            prepararReproductor(nombre, urlImgBlob);
+            ejecutarAudio(urlAudioBlob);
+        }
+
+        function prepararReproductor(nombre, srcImagen) {
+            if (audioActual) { audioActual.pause(); audioActual.currentTime = 0; }
+            repImg.src = srcImagen;
             repTitulo.textContent = nombre;
             reproductor.classList.add('activo');
         }
 
+        function ejecutarAudio(srcUrl) {
+            audioActual = new Audio(srcUrl);
+            audioActual.play();
+        }
+
         function parar() {
-            if (audioActual) {
-                audioActual.pause();
-                audioActual.currentTime = 0;
-            }
+            if (audioActual) { audioActual.pause(); audioActual.currentTime = 0; }
             reproductor.classList.remove('activo');
         }
 
-        // --- LÓGICA DE INSTALACIÓN (PWA) ACTUALIZADA ---
+        function cerrarModal(e) { if(e.target.id === 'modal-agregar') e.target.style.display = 'none'; }
+        
+        function previsualizar(input) {
+            const preview = document.getElementById('preview-foto');
+            if (input.files && input.files[0]) {
+                const archivo = input.files[0];
+                if (!archivo.type.startsWith('image/')) {
+                    alert("⚠️ El archivo seleccionado no es una imagen válida.");
+                    input.value = '';
+                    preview.style.display = 'none';
+                    return;
+                }
+                preview.src = URL.createObjectURL(archivo);
+                preview.style.display = 'block';
+            }
+        }
+
+        async function guardarEspecieLocal() {
+            const nombre = document.getElementById('nuevo-nombre').value.trim();
+            const foto = document.getElementById('nueva-foto').files[0];
+            const sonido = document.getElementById('nuevo-sonido').files[0];
+
+            if(!nombre || !foto || !sonido) {
+                alert("Por favor completá los 3 campos."); return;
+            }
+
+            const nuevaEspecie = {
+                id: 'local_' + Date.now(),
+                nombre: nombre,
+                fotoBlob: foto,
+                audioBlob: sonido
+            };
+
+            const tx = baseDatosDB.transaction('especiesLocales', 'readwrite');
+            tx.objectStore('especiesLocales').put(nuevaEspecie);
+            
+            tx.oncomplete = () => {
+                document.getElementById('modal-agregar').style.display = 'none';
+                document.getElementById('nuevo-nombre').value = '';
+                document.getElementById('nueva-foto').value = '';
+                document.getElementById('nuevo-sonido').value = '';
+                document.getElementById('preview-foto').style.display = 'none';
+                cargarGrilla();
+            };
+        }
+
+        iniciarDB().then(() => cargarGrilla());
+
         let eventoInstalacion = null;
         const btnInstalar = document.getElementById('btn-instalar');
         const modalIOS = document.getElementById('ios-instrucciones');
-
-        // Detectar si está instalada. 
-        // matchMedia es para Chrome/Android. navigator.standalone es exclusivo de iOS.
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        
-        // Detectar si el dispositivo es un iPhone o iPad
         const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        if (!isStandalone) {
-            if (esIOS) {
-                // --- MODO IOS: Forzamos el botón ---
-                if (btnInstalar) {
-                    btnInstalar.style.display = 'block'; // Lo mostramos de una
-                    btnInstalar.addEventListener('click', () => {
-                        modalIOS.style.display = 'flex'; // Mostramos las instrucciones
-                    });
-                }
-            } else {
-                // --- MODO ANDROID / WINDOWS: Esperamos el evento oficial ---
-                window.addEventListener('beforeinstallprompt', (e) => {
-                    e.preventDefault();
-                    eventoInstalacion = e;
-                    if(btnInstalar) {
-                        btnInstalar.style.display = 'block';
-                    }
-                });
+        if (isStandalone) {
+            if (btnInstalar) btnInstalar.style.display = 'none';
+            document.body.classList.remove('con-boton-instalar');
+        } else {
+            if (btnInstalar) {
+                btnInstalar.style.display = 'block';
+                document.body.classList.add('con-boton-instalar');
+            }
 
-                if(btnInstalar) {
-                    btnInstalar.addEventListener('click', async () => {
-                        if (!eventoInstalacion) return;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                eventoInstalacion = e;
+            });
+
+            if (btnInstalar) {
+                btnInstalar.addEventListener('click', async () => {
+                    if (esIOS) {
+                        modalIOS.style.display = 'flex';
+                    } else if (eventoInstalacion) {
                         eventoInstalacion.prompt();
                         const { outcome } = await eventoInstalacion.userChoice;
                         if (outcome === 'accepted') {
                             btnInstalar.style.display = 'none';
+                            document.body.classList.remove('con-boton-instalar');
                         }
                         eventoInstalacion = null;
-                    });
-                }
+                    } else {
+                        alert("Para instalar la app, abrí el menú de tu navegador (los tres puntos arriba a la derecha) y seleccioná 'Instalar aplicación' o 'Agregar a la pantalla principal'.");
+                    }
+                });
             }
         }
     </script>
