@@ -17,7 +17,7 @@
             font-style: normal;
         }
 
-        /* Deshabilitar selección de texto y menú flotante */
+        /* Deshabilitar selección de texto y menú flotante por defecto */
         * {
             font-family: 'Unkempt', sans-serif !important;
             -webkit-user-select: none;
@@ -44,7 +44,7 @@
             box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4); z-index: 1001;
             width: 85%; max-width: 320px; text-align: center;
             animation: latido 2s infinite; -webkit-tap-highlight-color: transparent;
-            display: none; /* Se activa por JS si no está instalada */
+            display: none;
         }
         #btn-instalar:active {
             animation: none; transform: translateX(-50%) scale(0.95);
@@ -109,10 +109,20 @@
         }
         .rep-texto-arriba { color: #666; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
         .rep-titulo { color: #222; font-size: 1.3rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .rep-botones {
+            display: flex;
+            gap: 10px;
+        }
         .btn-parar {
-            background-color: #e53935; color: white; border: none; padding: 10px;
+            background-color: #e53935; color: white; border: none; padding: 10px 15px;
             border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer;
-            box-shadow: 0 2px 4px rgba(229, 57, 53, 0.4); margin-bottom: 5px;
+            box-shadow: 0 2px 4px rgba(229, 57, 53, 0.4); margin-bottom: 5px; flex-grow: 1;
+        }
+        .btn-eliminar {
+            background-color: #757575; color: white; border: none; padding: 10px 15px;
+            border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(117, 117, 117, 0.4); margin-bottom: 5px; display: none;
         }
 
         .modal-overlay {
@@ -151,7 +161,10 @@
         <div class="rep-info">
             <span class="rep-texto-arriba">Reproduciendo...</span>
             <span id="rep-titulo" class="rep-titulo"></span>
-            <button class="btn-parar" onclick="parar()">Parar</button>
+            <div class="rep-botones">
+                <button class="btn-parar" onclick="parar()">Parar</button>
+                <button id="btn-eliminar-reproductor" class="btn-eliminar" onclick="eliminarActualDesdeReproductor()">🗑️ Eliminar</button>
+            </div>
         </div>
     </div>
 
@@ -203,6 +216,7 @@
         ];
 
         let baseDatosDB = null;
+        let idEspecieActualLocal = null; // Guarda el ID si se está reproduciendo una local
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
         function iniciarDB() {
@@ -240,14 +254,12 @@
                             request.result.forEach(especie => {
                                 const imgUrl = URL.createObjectURL(especie.fotoBlob);
                                 const audioUrl = URL.createObjectURL(especie.audioBlob);
+                                
+                                // Añadimos el evento oncontextmenu para bloquear el menú nativo y borrar con click derecho / toque sostenido
                                 grilla.innerHTML += `
                                     <button class="boton-sonido" 
-                                            onclick="reproducirLocal('${especie.nombre}', '${audioUrl}', '${imgUrl}')"
-                                            onmousedown="iniciarBorrado('${especie.id}', '${especie.nombre}')"
-                                            onttouchstart="iniciarBorrado('${especie.id}', '${especie.nombre}')"
-                                            onmouseup="cancelarBorrado()"
-                                            ontouchend="cancelarBorrado()"
-                                            onmouseleave="cancelarBorrado()">
+                                            onclick="reproducirLocal('${especie.id}', '${especie.nombre}', '${audioUrl}', '${imgUrl}')"
+                                            oncontextmenu="manejarBorradoContextual(event, '${especie.id}', '${especie.nombre}')">
                                         <img src="${imgUrl}">
                                     </button>`;
                             });
@@ -259,6 +271,8 @@
                     console.error("Error cargando locales:", e);
                 }
             }
+
+            // 3. Botón "+"
             grilla.innerHTML += `
                 <button class="boton-agregar" onclick="document.getElementById('modal-agregar').style.display='flex'">
                     <span>+</span>
@@ -276,10 +290,14 @@
         const reproductor = document.getElementById('reproductor');
         const repImg = document.getElementById('rep-img');
         const repTitulo = document.getElementById('rep-titulo');
+        const btnEliminarRep = document.getElementById('btn-eliminar-reproductor');
         const audiosEnMemoria = {};
 
         async function reproducirBase(nombre, rutaAudio, btnElement) {
+            idEspecieActualLocal = null;
+            btnEliminarRep.style.display = 'none'; // Oculta el botón de borrar porque es base
             prepararReproductor(nombre, btnElement.querySelector('img').src);
+            
             if (!audiosEnMemoria[rutaAudio]) {
                 try {
                     const respuesta = await fetch(rutaAudio);
@@ -294,7 +312,9 @@
             ejecutarAudio(audiosEnMemoria[rutaAudio]);
         }
 
-        function reproducirLocal(nombre, urlAudioBlob, urlImgBlob) {
+        function reproducirLocal(idLocal, nombre, urlAudioBlob, urlImgBlob) {
+            idEspecieActualLocal = idLocal; // Guardamos el ID por si quiere borrarlo desde el reproductor
+            btnEliminarRep.style.display = 'block'; // Muestra el botón de borrar
             prepararReproductor(nombre, urlImgBlob);
             ejecutarAudio(urlAudioBlob);
         }
@@ -314,6 +334,33 @@
         function parar() {
             if (audioActual) { audioActual.pause(); audioActual.currentTime = 0; }
             reproductor.classList.remove('activo');
+            idEspecieActualLocal = null;
+        }
+
+        // --- LÓGICA DE BORRADO (Menú contextual / Click derecho / Long press) ---
+        function manejarBorradoContextual(e, id, nombre) {
+            e.preventDefault(); // Mata el menú nativo de guardar imagen/abrir en pestaña
+            if (confirm(`¿Querés eliminar la especie "${nombre}"?`)) {
+                eliminarEspecieLocal(id);
+            }
+        }
+
+        function eliminarActualDesdeReproductor() {
+            if (idEspecieActualLocal) {
+                if (confirm("¿Querés eliminar esta especie?")) {
+                    parar();
+                    eliminarEspecieLocal(idEspecieActualLocal);
+                }
+            }
+        }
+
+        async function eliminarEspecieLocal(id) {
+            if (!baseDatosDB) return;
+            const tx = baseDatosDB.transaction('especiesLocales', 'readwrite');
+            tx.objectStore('especiesLocales').delete(id);
+            tx.oncomplete = () => {
+                cargarGrilla();
+            };
         }
 
         function cerrarModal(e) { if(e.target.id === 'modal-agregar') e.target.style.display = 'none'; }
@@ -400,32 +447,6 @@
                     }
                 });
             }
-        }
-
-        let temporizadorBorrado = null;
-
-        function iniciarBorrado(id, nombre) {
-            temporizadorBorrado = setTimeout(() => {
-                if (confirm(`¿Querés eliminar la especie "${nombre}"?`)) {
-                    eliminarEspecieLocal(id);
-                }
-            }, 800);
-        }
-
-        function cancelarBorrado() {
-            if (temporizadorBorrado) {
-                clearTimeout(temporizadorBorrado);
-                temporizadorBorrado = null;
-            }
-        }
-
-        async function eliminarEspecieLocal(id) {
-            if (!baseDatosDB) return;
-            const tx = baseDatosDB.transaction('especiesLocales', 'readwrite');
-            tx.objectStore('especiesLocales').delete(id);
-            tx.oncomplete = () => {
-                cargarGrilla();
-            };
         }
     </script>
 </body>
