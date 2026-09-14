@@ -240,9 +240,14 @@
                             request.result.forEach(especie => {
                                 const imgUrl = URL.createObjectURL(especie.fotoBlob);
                                 const audioUrl = URL.createObjectURL(especie.audioBlob);
-                                
                                 grilla.innerHTML += `
-                                    <button class="boton-sonido" onclick="reproducirLocal('${especie.nombre}', '${audioUrl}', '${imgUrl}')">
+                                    <button class="boton-sonido" 
+                                            onclick="reproducirLocal('${especie.nombre}', '${audioUrl}', '${imgUrl}')"
+                                            onmousedown="iniciarBorrado('${especie.id}', '${especie.nombre}')"
+                                            onttouchstart="iniciarBorrado('${especie.id}', '${especie.nombre}')"
+                                            onmouseup="cancelarBorrado()"
+                                            ontouchend="cancelarBorrado()"
+                                            onmouseleave="cancelarBorrado()">
                                         <img src="${imgUrl}">
                                     </button>`;
                             });
@@ -254,8 +259,6 @@
                     console.error("Error cargando locales:", e);
                 }
             }
-
-            // 3. EL BOTÓN "+" AHORA VIVE AFUERA Y SE RENDERIZA SIEMPRE SÍ O SÍ
             grilla.innerHTML += `
                 <button class="boton-agregar" onclick="document.getElementById('modal-agregar').style.display='flex'">
                     <span>+</span>
@@ -397,6 +400,32 @@
                     }
                 });
             }
+        }
+
+        let temporizadorBorrado = null;
+
+        function iniciarBorrado(id, nombre) {
+            temporizadorBorrado = setTimeout(() => {
+                if (confirm(`¿Querés eliminar la especie "${nombre}"?`)) {
+                    eliminarEspecieLocal(id);
+                }
+            }, 800);
+        }
+
+        function cancelarBorrado() {
+            if (temporizadorBorrado) {
+                clearTimeout(temporizadorBorrado);
+                temporizadorBorrado = null;
+            }
+        }
+
+        async function eliminarEspecieLocal(id) {
+            if (!baseDatosDB) return;
+            const tx = baseDatosDB.transaction('especiesLocales', 'readwrite');
+            tx.objectStore('especiesLocales').delete(id);
+            tx.oncomplete = () => {
+                cargarGrilla();
+            };
         }
     </script>
 </body>
