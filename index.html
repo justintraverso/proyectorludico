@@ -11,14 +11,14 @@
     <meta name="theme-color" content="#ffffff">    
     <style>
         @font-face {
-            font-family: 'Unkempt';
-            src: url('./style/Unkempt-Regular.ttf') format('truetype');
+            font-family: 'Inter';
+            src: url('./style/Inter.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
         }
 
         * {
-            font-family: 'Unkempt', sans-serif !important;
+            font-family: 'Inter', sans-serif !important;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -372,32 +372,53 @@
         }
 
         async function guardarEspecieLocal() {
-            const nombre = document.getElementById('nuevo-nombre').value.trim();
-            const foto = document.getElementById('nueva-foto').files[0];
-            const sonido = document.getElementById('nuevo-sonido').files[0];
+            try {
+                const nombreInput = document.getElementById('nuevo-nombre');
+                const fotoInput = document.getElementById('nueva-foto');
+                const sonidoInput = document.getElementById('nuevo-sonido');
 
-            if(!nombre || !foto || !sonido) {
-                alert("Por favor completá los 3 campos."); return;
+                const nombre = nombreInput.value.trim();
+                const foto = fotoInput.files[0];
+                const sonido = sonidoInput.files[0];
+
+                if(!nombre || !foto || !sonido) {
+                    alert("Por favor completá los 3 campos."); 
+                    return;
+                }
+
+                if (!baseDatosDB) {
+                    alert("⚠️ La base de datos local no está lista. Probá recargar la página.");
+                    return;
+                }
+
+                const nuevaEspecie = {
+                    id: 'local_' + Date.now(),
+                    nombre: nombre,
+                    fotoBlob: foto,
+                    audioBlob: sonido
+                };
+
+                const tx = baseDatosDB.transaction('especiesLocales', 'readwrite');
+                const store = tx.objectStore('especiesLocales');
+                const peticion = store.put(nuevaEspecie);
+                
+                peticion.onsuccess = () => {
+                    document.getElementById('modal-agregar').style.display = 'none';
+                    nombreInput.value = '';
+                    fotoInput.value = '';
+                    sonidoInput.value = '';
+                    document.getElementById('preview-foto').style.display = 'none';
+                    cargarGrilla();
+                };
+
+                peticion.onerror = (e) => {
+                    alert("❌ Error al guardar: Desactivar adblock o comprobá que los escudos no estén bloqueando el almacenamiento local de este sitio.");
+                    console.error("Error IndexedDB:", e.target.error);
+                };
+
+            } catch (err) {
+                alert("❌ Ocurrió un error inesperado: " + err.message);
             }
-
-            const nuevaEspecie = {
-                id: 'local_' + Date.now(),
-                nombre: nombre,
-                fotoBlob: foto,
-                audioBlob: sonido
-            };
-
-            const tx = baseDatosDB.transaction('especiesLocales', 'readwrite');
-            tx.objectStore('especiesLocales').put(nuevaEspecie);
-            
-            tx.oncomplete = () => {
-                document.getElementById('modal-agregar').style.display = 'none';
-                document.getElementById('nuevo-nombre').value = '';
-                document.getElementById('nueva-foto').value = '';
-                document.getElementById('nuevo-sonido').value = '';
-                document.getElementById('preview-foto').style.display = 'none';
-                cargarGrilla();
-            };
         }
 
         iniciarDB().then(() => cargarGrilla());

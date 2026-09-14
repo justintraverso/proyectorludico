@@ -1,4 +1,4 @@
-const CACHE_NAME = 'proyector-ludico-v4'; 
+const CACHE_NAME = 'proyector-ludico-v5'; 
 
 const ARCHIVOS_CACHE = [
     './',
@@ -15,7 +15,7 @@ const ARCHIVOS_CACHE = [
     './especies/8_MONO/8_MONO.png', './especies/8_MONO/8_MONO.mp3',
     './especies/9_PECARI/9_PECARI.png', './especies/9_PECARI/9_PECARI.mp3',
     './especies/10_RANITA/10_RANITA.png', './especies/10_RANITA/10_RANITA.mp3',
-    './style/Unkempt-Regular.ttf'
+    './style/Inter.ttf'
 ];
 
 self.addEventListener('install', (evento) => {
@@ -32,25 +32,28 @@ self.addEventListener('install', (evento) => {
     );
 });
 
-self.addEventListener('activate', (evento) => {
-    evento.waitUntil(
-        caches.keys().then((nombresDeCache) => {
+self.addEventListener('activate', (e) => {
+    e.waitUntil(
+        caches.keys().then((keys) => {
             return Promise.all(
-                nombresDeCache.map((nombre) => {
-                    if (nombre !== CACHE_NAME) {
-                        return caches.delete(nombre);
+                keys.map((key) => {
+                    if (key !== CACHE_NAME) {
+                        return caches.delete(key);
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
-self.addEventListener('fetch', (evento) => {
-    evento.respondWith(
-        caches.match(evento.request, { ignoreSearch: true })
-            .then((respuesta) => {
-                return respuesta || fetch(evento.request);
+self.addEventListener('fetch', (e) => {
+    e.respondWith(
+        fetch(e.request)
+            .then((res) => {
+                return res;
+            })
+            .catch(() => {
+                return caches.match(e.request);
             })
     );
 });
