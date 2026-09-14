@@ -17,7 +17,6 @@
             font-style: normal;
         }
 
-        /* Deshabilitar selección de texto y menú flotante por defecto */
         * {
             font-family: 'Unkempt', sans-serif !important;
             -webkit-user-select: none;
@@ -168,7 +167,6 @@
         </div>
     </div>
 
-    <!-- MODAL CARGAR ESPECIE -->
     <div id="modal-agregar" class="modal-overlay" onclick="cerrarModal(event)">
         <div class="modal-contenido" onclick="event.stopPropagation()">
             <h3>Cargar Nueva Especie</h3>
@@ -196,7 +194,6 @@
         </div>
     </div>
 
-    <!-- MODAL IOS -->
     <div id="ios-instrucciones" class="modal-overlay modal-ios-fondo">
         <div class="modal-contenido" style="border-radius: 20px 20px 0 0; text-align: center;">
             <h3>Instalar en iPhone</h3>
@@ -216,7 +213,7 @@
         ];
 
         let baseDatosDB = null;
-        let idEspecieActualLocal = null; // Guarda el ID si se está reproduciendo una local
+        let idEspecieActualLocal = null;
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
         function iniciarDB() {
@@ -232,7 +229,6 @@
         async function cargarGrilla() {
             grilla.innerHTML = '';
             
-            // 1. Dibujamos las especies base fijas
             especiesBase.forEach(id => {
                 const imgRuta = `./especies/${id}/${id}.png`;
                 const audioRuta = `./especies/${id}/${id}.mp3`;
@@ -242,7 +238,6 @@
                     </button>`;
             });
 
-            // 2. Buscamos y sumamos las especies locales (si la DB está lista)
             if (baseDatosDB) {
                 try {
                     const tx = baseDatosDB.transaction('especiesLocales', 'readonly');
@@ -255,7 +250,6 @@
                                 const imgUrl = URL.createObjectURL(especie.fotoBlob);
                                 const audioUrl = URL.createObjectURL(especie.audioBlob);
                                 
-                                // Añadimos el evento oncontextmenu para bloquear el menú nativo y borrar con click derecho / toque sostenido
                                 grilla.innerHTML += `
                                     <button class="boton-sonido" 
                                             onclick="reproducirLocal('${especie.id}', '${especie.nombre}', '${audioUrl}', '${imgUrl}')"
@@ -295,7 +289,7 @@
 
         async function reproducirBase(nombre, rutaAudio, btnElement) {
             idEspecieActualLocal = null;
-            btnEliminarRep.style.display = 'none'; // Oculta el botón de borrar porque es base
+            btnEliminarRep.style.display = 'none';
             prepararReproductor(nombre, btnElement.querySelector('img').src);
             
             if (!audiosEnMemoria[rutaAudio]) {
@@ -313,8 +307,8 @@
         }
 
         function reproducirLocal(idLocal, nombre, urlAudioBlob, urlImgBlob) {
-            idEspecieActualLocal = idLocal; // Guardamos el ID por si quiere borrarlo desde el reproductor
-            btnEliminarRep.style.display = 'block'; // Muestra el botón de borrar
+            idEspecieActualLocal = idLocal;
+            btnEliminarRep.style.display = 'block';
             prepararReproductor(nombre, urlImgBlob);
             ejecutarAudio(urlAudioBlob);
         }
@@ -337,9 +331,8 @@
             idEspecieActualLocal = null;
         }
 
-        // --- LÓGICA DE BORRADO (Menú contextual / Click derecho / Long press) ---
         function manejarBorradoContextual(e, id, nombre) {
-            e.preventDefault(); // Mata el menú nativo de guardar imagen/abrir en pestaña
+            e.preventDefault();
             if (confirm(`¿Querés eliminar la especie "${nombre}"?`)) {
                 eliminarEspecieLocal(id);
             }
