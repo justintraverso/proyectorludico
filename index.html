@@ -249,11 +249,15 @@
                             request.result.forEach(especie => {
                                 const imgUrl = URL.createObjectURL(especie.fotoBlob);
                                 const audioUrl = URL.createObjectURL(especie.audioBlob);
-                                
                                 grilla.innerHTML += `
                                     <button class="boton-sonido" 
                                             onclick="reproducirLocal('${especie.id}', '${especie.nombre}', '${audioUrl}', '${imgUrl}')"
-                                            oncontextmenu="manejarBorradoContextual(event, '${especie.id}', '${especie.nombre}')">
+                                            oncontextmenu="event.preventDefault();"
+                                            ontistart="iniciarLongPress(event, '${especie.id}', '${especie.nombre}')"
+                                            ontouchstart="iniciarLongPress(event, '${especie.id}', '${especie.nombre}')"
+                                            ontouchend="cancelarLongPress()"
+                                            ontouchmove="cancelarLongPress()"
+                                            onmousedown="if(event.button===2) { event.preventDefault(); if(confirm('¿Querés eliminar la especie \"${especie.nombre}\"?')) eliminarEspecieLocal('${especie.id}'); }">
                                         <img src="${imgUrl}">
                                     </button>`;
                             });
@@ -439,6 +443,24 @@
                         alert("Para instalar la app, abrí el menú de tu navegador (los tres puntos arriba a la derecha) y seleccioná 'Instalar aplicación' o 'Agregar a la pantalla principal'.");
                     }
                 });
+            }
+        }
+
+        let temporizadorPress = null;
+
+        function iniciarLongPress(e, id, nombre) {
+            temporizadorPress = setTimeout(() => {
+                if (navigator.vibrate) navigator.vibrate(50);
+                if (confirm(`¿Querés eliminar la especie "${nombre}"?`)) {
+                    eliminarEspecieLocal(id);
+                }
+            }, 700);
+        }
+
+        function cancelarLongPress() {
+            if (temporizadorPress) {
+                clearTimeout(temporizadorPress);
+                temporizadorPress = null;
             }
         }
     </script>
