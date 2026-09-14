@@ -167,13 +167,13 @@
 
             <div class="input-grupo">
                 <label>Foto (JPG o PNG)</label>
-                <input type="file" id="nueva-foto" onchange="previsualizar(this)">
+                <input type="file" id="nueva-foto" accept="image/*,.png,.jpg,.webp" onchange="previsualizar(this)">
                 <img id="preview-foto" style="width: 80px; height: 80px; object-fit: cover; display: none; margin-top: 10px; border-radius: 8px;">
             </div>
 
             <div class="input-grupo">
                 <label>Sonido (MP3)</label>
-                <input type="file" id="nuevo-sonido">
+                <input type="file" id="nuevo-sonido" accept="audio/*,.mp3">
             </div>
 
             <div style="display: flex; justify-content: flex-end; margin-top: 25px;">
@@ -217,6 +217,8 @@
 
         async function cargarGrilla() {
             grilla.innerHTML = '';
+            
+            // 1. Dibujamos las especies base fijas
             especiesBase.forEach(id => {
                 const imgRuta = `./especies/${id}/${id}.png`;
                 const audioRuta = `./especies/${id}/${id}.mp3`;
@@ -226,28 +228,38 @@
                     </button>`;
             });
 
+            // 2. Buscamos y sumamos las especies locales (si la DB está lista)
             if (baseDatosDB) {
-                const tx = baseDatosDB.transaction('especiesLocales', 'readonly');
-                const store = tx.objectStore('especiesLocales');
-                const request = store.getAll();
-                
-                request.onsuccess = () => {
-                    request.result.forEach(especie => {
-                        const imgUrl = URL.createObjectURL(especie.fotoBlob);
-                        const audioUrl = URL.createObjectURL(especie.audioBlob);
-                        
-                        grilla.innerHTML += `
-                            <button class="boton-sonido" onclick="reproducirLocal('${especie.nombre}', '${audioUrl}', '${imgUrl}')">
-                                <img src="${imgUrl}">
-                            </button>`;
+                try {
+                    const tx = baseDatosDB.transaction('especiesLocales', 'readonly');
+                    const store = tx.objectStore('especiesLocales');
+                    const request = store.getAll();
+                    
+                    await new Promise((resolve) => {
+                        request.onsuccess = () => {
+                            request.result.forEach(especie => {
+                                const imgUrl = URL.createObjectURL(especie.fotoBlob);
+                                const audioUrl = URL.createObjectURL(especie.audioBlob);
+                                
+                                grilla.innerHTML += `
+                                    <button class="boton-sonido" onclick="reproducirLocal('${especie.nombre}', '${audioUrl}', '${imgUrl}')">
+                                        <img src="${imgUrl}">
+                                    </button>`;
+                            });
+                            resolve();
+                        };
+                        request.onerror = () => resolve();
                     });
-
-                    grilla.innerHTML += `
-                        <button class="boton-agregar" onclick="document.getElementById('modal-agregar').style.display='flex'">
-                            <span>+</span>
-                        </button>`;
-                };
+                } catch (e) {
+                    console.error("Error cargando locales:", e);
+                }
             }
+
+            // 3. EL BOTÓN "+" AHORA VIVE AFUERA Y SE RENDERIZA SIEMPRE SÍ O SÍ
+            grilla.innerHTML += `
+                <button class="boton-agregar" onclick="document.getElementById('modal-agregar').style.display='flex'">
+                    <span>+</span>
+                </button>`;
         }
 
         function manejarErrorImagen(img, id) {
